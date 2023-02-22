@@ -1,0 +1,780 @@
+---
+title: "Regular expressions and working with strings"
+subtitle: "R-Ladies St. Louis</br>February 22, 2023"
+author: "[Luis D. Verde Arregoitia](https://liomys.mx)"
+format: 
+  rladies-revealjs:
+    footer: "[R-Ladies](https://rladies.org/) theme for [Quarto Presentations](https://quarto.org/docs/presentations/revealjs/index.html). Template available on [GitHub](https://github.com/beatrizmilz/quarto-rladies-theme)."
+incremental: false
+embed-resources: true
+highlight-style: oblivion
+---
+
+```{r setup}
+#| include: false
+library(ggplot2)
+library(dplyr)
+library(gt)
+library(stringr)
+library(fontawesome)
+library(palmerpenguins)
+```
+
+## About: me
+
+::: columns
+::: {.column width="40%"}
+![](imgs/luisconmila.jpg){width="50%"}\
+[`r fa(name = "twitter")` \@LuisDVerde](https://twitter.com/LuisDVerde)\
+[`r fa(name = "github")` \@LuisDVA](https://github.com/luisdva)\
+[`r fa(name = "link")` liomys.mx](https://liomys.mx)\
+[`r fa(name = "paper-plane")` luis\@liomys.mx](mailto:luis@liomys.mx)
+:::
+
+::: {.column width="58%"}
+-   Mammals, conservation, macroecology
+-   Evolution, ecomorphology
+-   Phylogenetic Comparative Methods
+-   Biogeography, R as a GIS
+-   Certified trainer (posit::`tidyverse` & Software Carpentry)
+:::
+:::
+
+## What are Regular Expressions?
+
+-   Also abbreviated as regex, R.E., or regexp (singular)
+
+-   A concise language for describing patterns of text 
+
+</br> 
+
+### Specially encoded 🧶[strings](#strings-1) of characters that match patterns in other text strings
+
+## Regular expressions
+
+In practice, a computer language with its own terminologies and syntax
+
+-   Input as a text string that compiles into a mini program built specifically to identify a pattern.
+
+-   Can be used to match, search, replace, or split text
+
+# Have you used regular expressions? If so, what for?{background-color="#e6ac5a"}
+
+## Possible patterns
+
+-   "dog" but not "dogs"
+
+-   "dogs" but only if the match is at the start of the string,
+
+-   digits (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+-   "modeling" or "modelling" (alternate spellings of the same word)
+
+-   words ending in "at" (words that begin or end with a specific pattern)
+
+-   strings that start with digits
+
+-   dates
+
+## More possible patterns
+
+-   zip codes
+
+-   numbers inside square brackets and also the brackets
+
+-   valid Twitter handles (start with \@, no spaces or symbols, \<16 characters)
+
+-   UPPERCASE words
+
+
+## Why Learn Regular Expressions?
+
+-   Underutilized, valuable skill
+
+-   Save time when we need to match, extract, or transform text by matching words, characters, and patterns
+
+-   Regular expressions can often **replace dozens of lines of code**
+
+-   Not specific to any particular programming language
+
+## 
+![](imgs/catmeme.jpg)
+
+# What we need
+- strings
+- patterns
+
+</br>
+
+Generally, we describe **patterns** and look for them in **input strings**
+
+
+## 🧶Strings
+
+A collection of characters that make up one element of a vector:
+
+```{r}
+#| eval: true
+#| echo: true
+
+test_string <- "This sentence is a string."
+```
+
+<br/>
+
+
+We can store multiple strings in a character vector:
+
+```{r}
+#| eval: true
+#| echo: true
+
+pets <-  c("dogs","cat","parrot","pig")
+```
+
+## Strings {#strings-1}
+
+::: columns
+::: {.column width="50%"}
+Names, row names, column names, and values in a data frame can also be strings:
+
+```{r}
+#| eval: true
+#| include: false
+
+library(gt)
+library(tibble)
+library(magrittr)
+drinks_df <- tibble(drink=c("Coffee","Tea","Juice"),price=c(3.50,2.99,3.20))
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| eval: true
+#| echo: false
+
+drinks_df %>%
+  gt() %>%
+  tab_style(
+    style = list(
+      cell_fill(color = "yellow")
+    ),
+    locations = cells_body(
+      columns = vars(drink)
+    )
+  ) %>%
+  tab_options(column_labels.background.color = "yellow")
+```
+:::
+:::
+
+
+## Note: strings in R are *case sensitive*
+
+Uppercase and lowercase letters are treated as distinct
+
+```{r}
+#| eval: true
+#| echo: true
+"rat"=="rat"
+```
+
+```{r}
+#| echo: true
+"rat"=="rAT"
+```
+
+## Regex searches are case sensitive by default
+
+Our options:
+
+-   Build case-insensitive regular expressions
+
+-   Turn off case sensitivity in the matching
+
+-   Modify the input text before matching
+
+
+
+
+## Regex - Getting started
+
+1) Describe a pattern  
+2) Provide an input string  
+3) Feed into a function (for matching, replacing, splitting, etc.)  
+
+<br/>
+
+The matching is done by the regex engine. We do not access the engine directly, but functions that take regular expressions as arguments call on it whenever its needed.
+
+## Getting started
+
+::: columns
+::: {.column width="33%"}
+### Regexp
+
+</br> dog
+:::
+
+::: {.column width="33%"}
+### Input string
+
+</br> "The dog is fat."
+:::
+
+::: {.column width="33%"}
+### Match
+
+</br> The [dog]{style="color: orange"} is fat.
+:::
+:::
+
+To search for a specific sequence of characters, the regexp (regular expression) we need is simply that sequence of characters
+
+> find a **d** followed by an **o** followed by a **g**. (all lowercase and all characters together and in that order when read from left to right)
+
+## Online regex testers
+
+Is the regular expression matching anything?
+
+-   [rubular](https://rubular.com/) by Michael Lovitt
+
+-   [regex101](https://regex101.com/) by Firas Dib
+
+-   [regexr](https://regexr.com/) by Grant Skinner
+
+-   [regexpal](https://www.regexpal.com/) - part of Dan's Developer Tools
+
+## Regex Testers
+
+![](imgs/regextester.png)
+
+## Practice - Regex {background-color="#a4c5ff"}
+
+Navigate to [rubular](https://rubular.com/), [regex101](https://regex101.com/), [regexr](https://regexr.com/), or [regexpal](https://www.regexpal.com/)
+
+Input the following text into the test string field:
+
+cat\
+hat\
+CAT\
+Manhattan\
+MOUSE\
+housekeeping\
+
+Let's try different regexes in the `pattern` box to see what happens
+
+
+## Literal Characters and Metacharacters
+
+Strings and regular expressions are made of characters
+
+</br>
+
+For regular expressions, characters can be grouped into two classes depending on their behavior
+
+## Literal characters
+
+If input string is **"dog"** and regex is [dog]{style="color: orange"}
+
+</br>
+
+We will get a match whenever the characters [d]{style="color: orange"}, [o]{style="color: orange"}, and [g]{style="color: orange"} occur consecutively in the input text
+
+</br> `"dog"` tells the regex engine: find a [d]{style="color: orange"}, immediately followed by an [o]{style="color: orange"}, immediately followed by a [g]{style="color: orange"} **together and in that particular order**
+
+## Literal characters (continued)
+
+[d]{style="color: orange"}, [o]{style="color: orange"} and [g]{style="color: orange"} are examples of literal characters
+
+</br> They stand for exactly what they are: `d` in the regex matches a "d" in the input text, `o` matches an "o" in text, and so on.
+
+##
+
+</br>
+</br>
+
+The power and flexibility of regular expressions comes from their ability to describe more complex patterns.
+
+</br>
+
+If a text pattern can be described verbally, we can most likely write a regular expression to match it.
+
+
+## 
+
+![](imgs/regexcomic.jpeg)
+
+## Metacharacters
+
+To match more than literal strings of text, a small subset of characters that have special functionalities when they appear in a regular expression.  
+
+</br>
+
+Metacharacters do not stand for themselves, they interpreted in a special way.\
+
+</br>
+Metacharacters include: [\[\]\^\$.\|?\*+()]{style="color: orange"}, which are reserved for unique matching purposes.
+
+## Wildcards
+
+Stand in for unknown characters
+
+**`.`** match any character once
+
+[f..l]{style="color: orange"} matches "[fill]{style="background-color: yellow"}" and "[fool]{style="background-color: yellow"}", but not "flail"
+
+[.top]{style="color: orange"} matches "[stop]{style="background-color: yellow"} and"is[otop]{style="background-color: yellow"}e", but not "topple"
+
+## Character sets
+
+Match one or more characters enclosed in square brackets
+
+`[ ]` match a set of characters
+
+[\[cb\]at]{style="color: orange"} matches "[cat]{style="background-color: yellow"}", and "[bat]{style="background-color: yellow"}", but not "rat"
+
+[\[CK\]at\[iey\]]{style="color: orange"} matches "[Caty]{style="background-color: yellow"}", "[Kati]{style="background-color: yellow"}", "[Katy]{style="background-color: yellow"}", and "[Kate]{style="background-color: yellow"}"
+
+## Negation tokens
+
+[\[\^\]]{style="color: orange"}    match characters not in the specified character set
+
+> `^` must be the first character inside the brackets
+
+[\[\^aoeiou\]]{style="color: orange"} matches consonants
+
+[\[\^R\]]{style="color: orange"} matches everything except capital R
+
+## Character ranges
+
+Indicate a series of sequential characters inside character sets
+
+Dash [-]{style="color: orange"} inside a character set abbreviates alphabetical or numeric sequences
+
+[\[A-D\]]{style="color: orange"} matches any single letter from A,B,C, or D (uppercase)
+
+[\[5-8\]]{style="color: orange"} matches any single digit between 5 and 8
+
+[\[A-Za-z\]]{style="color: orange"} matches all alphabetical characters
+
+*character sets are case sensitive*\
+*character ranges can also be negated with `^`*
+
+## Anchors
+
+Specify the relative position of the pattern being matched
+
+[ \^ ]{style="color: orange"}    starts with\
+
+[ \$ ]{style="color: orange"}    ends with\
+note: [ \^ ]{style="color: orange"}     outside a pair of square brackets is an anchor
+
+[\^mil]{style="color: orange"} matches "[mil]{style="background-color: yellow"}kshake" but not "family"
+
+[ing\$]{style="color: orange"} matches "go[ing]{style="background-color: yellow"}" but not "ingest"
+
+
+## Practice {background-color="#a4c5ff"}
+
+-   Write a regexp that can match **tender**, **timber**, **tailor**, and **taller**
+
+-   Match possible misspellings of 'herbivore' using character sets?
+
+## Practice {background-color="#a4c5ff"}
+
+-   Which of these regular expressions matches **`food`** at the beginning of a string?
+
+::: columns
+::: {.column width="25"}
+a)  \^food
+:::
+
+::: {.column width="25"}
+b)  food
+:::
+
+::: {.column width="25"}
+c)  \$food
+:::
+
+::: {.column width="25"}
+d)  food\^
+:::
+:::
+
+## Quantifiers
+
+Specify how many times a character or character class must appear in the input for a match to be found
+
+[ ? ]{style="color: orange"}   Zero or one\
+[ \* ]{style="color: orange"}   Zero or more occurrences\
+[ + ]{style="color: orange"}   One or more occurrences\
+[ {}]{style="color: orange"}   Exactly the specified number of occurrences
+
+> quantifiers apply to the preceding character
+
+## Quantifiers
+
+[modell?ing]{style="color: orange; font-weight: bold"} matches "[modeling]{style="background-color: yellow"}" and "[modelling]{style="background-color: yellow"}"
+
+> zero or one `els (l)`
+
+[ya\*y!]{style="color: orange; font-weight: bold"} matches "[yy!]{style="background-color: yellow"}", "[yay!]{style="background-color: yellow"}", "[yaaay!]{style="background-color: yellow"}", "[yaaaaaay!]{style="background-color: yellow"}", etc.
+
+> zero or more `aes (a)`
+
+## Quantifiers
+
+[no+]{style="color: orange; font-weight: bold"} matches "[no]{style="background-color: yellow"}", "[nooo]{style="background-color: yellow"}", "[noooooo]{style="background-color: yellow"}", etc, but not "n"
+
+> one or more `oes (o)`
+
+[e{2}]{style="color: orange; font-weight: bold"} matches ."k[ee]{style="background-color: yellow"}p" and "b[ee]{style="background-color: yellow"}" but not "meat"
+
+> exactly two `ees (e)`
+
+## Quiz {background-color="#a4c5ff"}
+
+-   Use a quantifier to match **cute**, **cuuute**, **cuuuuuute**, and **cuuuuuuuuute**
+
+-   How can we match Computer, computer, Computers, and computers?
+
+::: columns
+::: {.column width="33%"}
+a)  \[cC\]omputers?
+:::
+
+::: {.column width="33%"}
+b)  Computers+
+:::
+
+::: {.column width="33%"}
+c)  \[cC\]omputer\[s\]+
+:::
+:::
+
+## Alternation
+
+Alternation tokens separate a series of alternatives
+
+[ \| ]{style="color: orange; font-weight: bold"}    either or
+
+</br>
+
+[dog\|bird]{style="color: orange; font-weight: bold"} matches "[dog]{style="background-color: yellow"}" or "[bird]{style="background-color: yellow"}"
+
+[gr(a\|e)y]{style="color: orange; font-weight: bold"} matches "[gray]{style="background-color: yellow"}" and "[grey]{style="background-color: yellow"}"  
+
+> note the alternation enclosed in brackets
+
+## Special sequences and escapes
+
+[ \\ ]{style="color: orange; font-weight: bold"}    signals a shorthand sequence or gives special characters a literal meaning
+
+## Escapes
+
+[hello\\\\?]{style="color: orange; font-weight: bold"} matches "[hello?]{style="background-color: yellow"}"
+
+> question mark treated as a literal character, but in R escape the backslash first
+
+*Metacharacters inside a character set are stripped of their special nature*
+
+------------------------------------------------------------------------
+
+## ![](imgs/garricktweet.png)
+
+## Shorthand sequences
+
+Refer to commonly-used character sets
+
+[\\w]{style="color: orange; font-weight: bold"}  letters, underscore, and numbers <br> [\\d]{style="color: orange; font-weight: bold"}  digits<br> [\\t]{style="color: orange; font-weight: bold"}    tab [\\n]{style="color: orange; font-weight: bold"}   new line\
+[\\s]{style="color: orange; font-weight: bold"}  space\
+[\\b]{style="color: orange; font-weight: bold"}  word boundary<br>
+
+> Predefined character classes help us avoid malformed character sets
+
+## Word boundaries
+
+[\\b]{style="color: orange; font-weight: bold"}
+
+Match **positions** between a *word* character (letter, digit or underscore) and a non-word character (usually a space or the start/end of a string).
+
+> Before a sequence of word characters
+
+[\\bcase]{style="color: orange; font-weight: bold"} matches "[case]{style="background-color: yellow"}" and "two [case]{style="background-color: yellow"}s" but not "suitcase"
+
+> After a sequence of word characters
+
+[org\\b]{style="color: orange; font-weight: bold"} matches "cyb[org]{style="background-color: yellow"} rebellion" but not "organic"
+
+## *Word* characters
+
+[\w]{style="color: orange; font-weight: bold"}
+
+Matches any character (letter, digit or underscore). Useful in combination with word boundaries and quantifiers.
+
+</br>
+
+Equivalent to [\[a-zA-Z0-9\_\]]{style="color: orange; font-weight: bold"}
+
+[\\w]{style="color: orange; font-weight: bold"} matches letters (case insensitive), numbers, and underscores in:
+
+[F33d]{style="background-color: yellow"}.%.[the_mÖusE]{style="background-color: yellow"} [pl]{style="background-color: yellow"}\@[ase]{style="background-color: yellow"}!!#
+
+## Practice {background-color="#a4c5ff"}
+
+-   Enter "That atmospheric sensor is at the university" as the test string in a regex tester.
+
+-   Explain the matches obtained with the following three regular expressions?
+
+a)  at\
+b)  \\bat\
+c)  at\\b
+
+## Anchor, wildcard with quantifier (0 or more)
+
+[\^can.\*]{style="color: orange; font-weight: bold"} matches "[canine]{style="background-color: yellow"}", "[canadian]{style="background-color: yellow"}", and "[canoli]{style="background-color: yellow"}oli", but not "a canister"
+
+</br>
+
+### Wildcard and quantifier
+
+[A.\*x]{style="color: orange; font-weight: bold"} strings that start with "**A**" and end with "**x**"
+
+</br>
+
+### Shorthand sequence (space) and quantifier
+
+[\\s{3}]{style="color: orange; font-weight: bold"} matches three spaces
+
+## Anchors, character set, and quantifier (one or more)
+
+[\^\[a-z\]+\$]{style="color: orange; font-weight: bold"} matches a lowercase string
+
+## Word characters, quantifiers, word boundaries, and anchors
+
+[\\w+\\b\$]{style="color: orange; font-weight: bold"} matches the last word in a string
+
+"Fix the [car]{style="background-color: yellow"}"\
+"12 [eggs]{style="background-color: yellow"}"
+
+[\^\\w+\\b]{style="color: orange; font-weight: bold"} matches the first word in a string
+
+"[Fix]{style="background-color: yellow"} the car."\
+"[12]{style="background-color: yellow"} eggs"
+
+------------------------------------------------------------------------
+
+![](imgs/regular-expressions.svg)
+
+</br>
+
+Modified from '[Regular Expressions](https://github.com/rstudio/concept-maps/#regular-expressions)' concept map by Greg Wilson
+
+
+# Regex in R
+
+------------------------------------------------------------------------
+
+We can match column names and values in `character` strings with regular expressions
+
+![](imgs/regexsubsetting.png)
+
+## 📦 `stringr`
+
+Cohesive set of functions for string manipulation
+
+-   Function names start with **`str_`**
+
+-   All functions take a vector of strings as the first argument (pipe-friendly)
+
+**`regex()`** modifier to control matching behavior
+
+`ignore_case=TRUE` will make matches case insensitive
+
+## `stringr` examples
+
+**Matches?**
+
+```{r}
+#| eval: true
+#| echo: true
+
+str_detect(string = c("catalog", "battlecat", "apple"), 
+           pattern = "cat")
+```
+
+Output is a logical, TRUE or FALSE vector of the same length as our input string
+
+## `stringr` examples
+
+**Which elements contain matches?**
+
+```{r}
+#| eval: true
+#| echo: true
+
+str_which(string = c("catalog", "battlecat", "apple"), 
+          pattern = "cat")
+```
+
+Output is the index for each of the matching elements
+
+## `stringr` examples
+
+**Replacing matches**
+
+```{r}
+#| eval: true
+#| echo: true
+
+str_replace(string = c("colour", "neighbour", "honour"),
+            pattern = "ou",
+            replacement = "o")
+```
+
+## `stringr` examples
+
+**Case insensitive matching**
+
+```{r}
+#| eval: true
+#| echo: true
+
+str_replace(string = c("colOur", "neighboUr", "honOUr"),
+            pattern = regex("ou", ignore_case = TRUE),   
+            replacement = "o") 
+```
+
+## Demo - `stringr` {background-color="#a4c5ff"}
+
+Let's match these REs against the test vector below using `str_detect`. Can we explain the matches?
+
+Regular expressions\
+1. \^dog\
+2. \^\[a-z\]+\$\
+3. \\d
+
+```{r}
+#| echo: true
+#| eval: false
+
+test_vector <- c("Those dogs are small.","dogs and cats",
+                 "34","(34)","rat","watchdog","placemat",
+                 "BABY","2011_April","mice")
+```
+
+## Using regular expressions in data manipulation
+
+</br>
+
+Select, subset, keep, or discard rows and columns
+
+Substitute or recode values
+
+Extract or remove substrings
+
+## Cleaning data with regex
+
+To select variables with 📦 `dplyr` and `tidyr`, we:
+
+-   write out their names
+
+-   refer to them by position
+
+-   specify ranges of contiguous variables
+
+-   use 📦 `tidyselect` helper functions
+
+------------------------------------------------------------------------
+
+## 📦 `tidyselect` helpers
+
+</br> **`matches()`**: takes regular expressions, and selects variables that match a given pattern
+
+**`starts_with()`**: Starts with a prefix
+
+**`ends_with()`**: Ends with a suffix
+
+**`contains()`**: Contains a literal string
+
+## Selecting columns by name
+
+`penguins` data from 📦 `palmerpenguins`
+
+```{r}
+#| eval: true
+#| echo: true
+names(penguins)
+```
+
+```{r}
+#| eval: true
+#| echo: true
+
+penguins %>% 
+  select(species, bill_length_mm, flipper_length_mm) %>% 
+  sample_n(3)
+```
+
+## Selecting columns by matches in variable names
+
+```{r, eval=TRUE}
+#| eval: true
+#| echo: true
+
+penguins %>% 
+  select(species, matches("length")) %>% 
+  sample_n(3)
+```
+
+## Match values and filter rows
+
+Mammals sleep dataset (`msleep`) from 📦 `ggplot2`
+
+```{r, eval=FALSE}
+library(ggplot2)
+```
+
+```{r}
+#| eval: true
+#| echo: true
+ 
+msleep %>% select(name,genus) %>% sample_n(4)
+```
+
+## Match values and filter rows
+
+Filter to keep rats only
+
+```{r}
+#| eval: true
+#| echo: true
+msleep %>% 
+  select(name,genus) %>% 
+  filter(str_detect(string = name,pattern = "rat"))
+```
+
+## Practice {background-color="#a4c5ff"}
+
+🐀 After running the code below, how can we exclude muskrats from the matches?
+
+```{r}
+#| eval: false
+#| echo: true
+msleep %>% 
+  select(name,genus) %>% 
+  filter(str_detect(string = name,pattern = "rat"))
+```
+
+## Wrap up
+
+- Regex == super helpful
+- We often don't need to write REs from scratch
+- More regex features to explore (lookaheads, lookbehinds, capture groups, backreferences)
+
+# Thank you!
+Questions? Comments?
+
